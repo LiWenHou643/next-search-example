@@ -30,9 +30,10 @@
         "customerShortName": "顧客名 - 簡易",
         "customerLocation": "分類",
         "customerAddress": "住所",
-        "accountantName": "会計担当者氏名",
-        "accountantPhone": "会計担当者電話番号",
-        "accountantEmail": "会計担当者メール",
+        "accountant": "会計担当者",
+        "accountantName": "氏名",
+        "accountantPhone": "電話番号",
+        "accountantEmail": "メールアドレス",
 
         "retailerNum": "番号",
         "retailerCode": "税コード",

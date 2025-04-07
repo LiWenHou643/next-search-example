@@ -30,9 +30,10 @@
         "customerShortName": "Tên khách hàng viết tắt",
         "customerLocation": "Địa điểm",
         "customerAddress": "Địa chỉ",
-        "accountantName": "Họ và tên người phụ trách kế toán",
-        "accountantPhone": "SĐT người phụ trách kế toán",
-        "accountantEmail": "Email người phụ trách",
+        "acountant": "Người phụ trách kế toán",
+        "accountantName": "Họ và tên",
+        "accountantPhone": "SĐT",
+        "accountantEmail": "Email",
 
         "retailerNum": "STT",
         "retailerCode": "Mã số thuế",
