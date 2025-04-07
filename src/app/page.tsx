@@ -18,6 +18,8 @@ export default function Home() {
         (_, index) => (starterYear + index).toString()
     );
 
+    const sizeOptions = [10, 20, 50]; // Options for items per page
+
     const page = parseInt(searchParams.get('page') || '1', 10); // Parse page number for calculations
     const size = searchParams.get('size') || '10';
     const filterYear = searchParams.get('filterYear') || currentYear.toString();
@@ -130,9 +132,11 @@ export default function Home() {
                     onChange={handleSizeChange}
                     className='text-gray-700 w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
                 >
-                    <option value={10}>10 rows</option>
-                    <option value={20}>20 rows</option>
-                    <option value={50}>50 rows</option>
+                    {sizeOptions.map((option) => (
+                        <option key={option} value={option}>
+                            {option}
+                        </option>
+                    ))}
                 </select>
             </div>
 
