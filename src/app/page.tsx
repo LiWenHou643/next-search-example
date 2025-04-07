@@ -1,103 +1,158 @@
-import Image from "next/image";
+'use client';
+
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    const pathname = usePathname(); // Get the current pathname
+    const searchParams = useSearchParams(); // Get the search params (like `page` and `size`)
+    const router = useRouter(); // For programmatic navigation
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    // Assuming you have a starter year and want to generate the year list dynamically
+    const starterYear = 2020;
+    const currentYear = new Date().getFullYear(); // Get the current year
+
+    // Generate an array of years from starterYear to currentYear
+    const yearOptions = Array.from(
+        { length: currentYear - starterYear + 1 },
+        (_, index) => (starterYear + index).toString()
+    );
+
+    const page = parseInt(searchParams.get('page') || '1', 10); // Parse page number for calculations
+    const size = searchParams.get('size') || '10';
+    const filterYear = searchParams.get('filterYear') || currentYear.toString();
+    const searchKey = searchParams.get('keySearch') || '';
+
+    const fetchData = async () => {
+        console.log(
+            `Fetching data for page: ${page}, size: ${size}, year: ${filterYear}, search: ${searchKey}`
+        );
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, [page, size, filterYear, searchKey]); // Fetch new products when params change
+
+    // Navigate to a new page with updated query params
+    const updateQueryParams = (newParams: {
+        page?: number;
+        size?: string;
+        filterYear?: string;
+        keySearch?: string;
+    }) => {
+        const updatedSearchParams = new URLSearchParams(
+            searchParams.toString()
+        );
+
+        if (newParams.page !== undefined)
+            updatedSearchParams.set('page', newParams.page.toString());
+        if (newParams.size !== undefined)
+            updatedSearchParams.set('size', newParams.size);
+        if (newParams.filterYear !== undefined)
+            updatedSearchParams.set('filterYear', newParams.filterYear);
+        if (newParams.keySearch !== undefined)
+            updatedSearchParams.set('keySearch', newParams.keySearch);
+
+        // Update the URL with new parameters
+        router.push(`${pathname}?${updatedSearchParams.toString()}`);
+    };
+
+    // Handle pagination
+    const handlePageChange = (newPage: number) => {
+        updateQueryParams({ page: newPage });
+    };
+
+    // Handle items per page
+    const handleSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        updateQueryParams({ size: event.target.value });
+    };
+
+    // Handle year filter change
+    const handleYearChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        updateQueryParams({ filterYear: event.target.value });
+    };
+
+    // Handle search input change
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        updateQueryParams({ keySearch: event.target.value });
+    };
+
+    return (
+        <div className='max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10'>
+            <h1 className='text-3xl font-bold text-gray-900 mb-6'>
+                Search Page
+            </h1>
+            {/* Search Input */}
+            <div className='mb-4'>
+                <input
+                    type='text'
+                    value={searchKey}
+                    onChange={handleSearchChange} // Corrected for an input element
+                    placeholder='Search...'
+                    className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700'
+                />
+            </div>
+            {/* Year Filter */}
+            <div className='mb-4'>
+                <label
+                    htmlFor='filterYear'
+                    className='text-gray-700 font-semibold'
+                >
+                    Filter by Year
+                </label>
+                {/* Dropdown (select) for filtering by year */}
+                <select
+                    id='filterYear'
+                    value={filterYear}
+                    onChange={handleYearChange} // Handle change for dropdown
+                    className='text-gray-700 w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                >
+                    <option value=''>Select Year</option>
+                    {yearOptions.map((year) => (
+                        <option key={year} value={year}>
+                            {year}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Page Size Filter */}
+            <div className='mb-4'>
+                <label
+                    htmlFor='pageSize'
+                    className='text-gray-700 font-semibold'
+                >
+                    Items per Page
+                </label>
+                <select
+                    id='pageSize'
+                    value={size}
+                    onChange={handleSizeChange}
+                    className='text-gray-700 w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                >
+                    <option value={10}>10 rows</option>
+                    <option value={20}>20 rows</option>
+                    <option value={50}>50 rows</option>
+                </select>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className='flex items-center justify-between mt-6'>
+                <button
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1}
+                    className='px-4 py-2 bg-blue-500 text-white rounded-md disabled:bg-gray-300'
+                >
+                    Previous
+                </button>
+                <span className='text-gray-700'>Page {page}</span>
+                <button
+                    onClick={() => handlePageChange(page + 1)}
+                    className='px-4 py-2 bg-blue-500 text-white rounded-md'
+                >
+                    Next
+                </button>
+            </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    );
 }
