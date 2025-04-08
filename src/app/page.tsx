@@ -376,7 +376,7 @@ const DialogDemo = () => {
     // Submit form data
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setAlertAction('cancel');
+        setAlertAction('submit');
         setIsAlertDialogOpen(true); // Show confirmation dialog before submitting
     };
 
