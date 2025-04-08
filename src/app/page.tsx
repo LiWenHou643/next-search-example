@@ -332,9 +332,9 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
 const DialogDemo = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
-    const [alertAction, setAlertAction] = useState<'reset' | 'cancel' | null>(
-        null
-    );
+    const [alertAction, setAlertAction] = useState<
+        'reset' | 'cancel' | 'submit' | null
+    >(null);
     const dialogRef = useRef<HTMLDivElement | null>(null);
     const formRef = useRef<HTMLFormElement | null>(null);
 
@@ -376,8 +376,8 @@ const DialogDemo = () => {
     // Submit form data
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Form submitted');
-        handleCloseDialog(); // Close the dialog after submission
+        setAlertAction('cancel');
+        setIsAlertDialogOpen(true); // Show confirmation dialog before submitting
     };
 
     // Handle Reset button click
@@ -413,6 +413,13 @@ const DialogDemo = () => {
             setAlertAction(null);
         } else if (alertAction === 'cancel') {
             // Close the main dialog
+            handleCloseDialog();
+        } else if (alertAction === 'submit') {
+            // Submit the form
+            if (formRef.current) {
+                const formData = new FormData(formRef.current);
+                console.log('Form submitted:', Object.fromEntries(formData));
+            }
             handleCloseDialog();
         }
     };
@@ -483,12 +490,35 @@ const DialogDemo = () => {
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={handleCancelAlert}>
                             Cancel
-                        </AlertDialogCancel>{' '}
+                        </AlertDialogCancel>
                         {/* Stay in the form dialog */}
                         <AlertDialogAction onClick={handleConfirmAlert}>
                             Confirm
-                        </AlertDialogAction>{' '}
+                        </AlertDialogAction>
                         {/* Close both dialogs */}
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Submit confirmation dialog */}
+            <AlertDialog
+                open={isAlertDialogOpen && alertAction === 'submit'}
+                onOpenChange={setIsAlertDialogOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Submit Confirmation</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to submit the form?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleCancelAlert}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmAlert}>
+                            Submit
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
