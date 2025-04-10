@@ -39,6 +39,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Download, Trash2, Upload } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -123,6 +124,8 @@ export default function Home() {
             <h1 className='text-3xl font-bold text-gray-900 mb-6'>
                 Search Page
             </h1>
+
+            <ImportButton />
 
             <DialogDemo />
 
@@ -332,45 +335,18 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
 const DialogDemo = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+    const [isPendingClose, setIsPendingClose] = useState(false);
     const [alertAction, setAlertAction] = useState<
         'reset' | 'cancel' | 'submit' | null
     >(null);
     const dialogRef = useRef<HTMLDivElement | null>(null);
     const formRef = useRef<HTMLFormElement | null>(null);
 
-    // Show the confirmation dialog without closing the form dialog when clicking outside
-    const handleOutsideClick = (e: MouseEvent) => {
-        if (
-            dialogRef.current &&
-            !dialogRef.current.contains(e.target as Node)
-        ) {
-            console.log('Clicked outside the dialog');
-            setAlertAction('cancel');
-            setIsAlertDialogOpen(true); // Show confirmation dialog if clicked outside
-        }
-    };
-
-    // Set up and clean up the outside click listener
-    useEffect(() => {
-        if (isDialogOpen) {
-            document.addEventListener('click', handleOutsideClick);
-        }
-        return () => {
-            document.removeEventListener('click', handleOutsideClick);
-        };
-    }, [isDialogOpen]); // Only re-run when main dialog state changes
-
-    // Attach event listener for outside click detection
-    const handleDialogTriggerClick = () => {
-        document.addEventListener('click', handleOutsideClick);
-    };
-
     // Close the main dialog
     const handleCloseDialog = () => {
         setIsDialogOpen(false);
         setIsAlertDialogOpen(false);
         setAlertAction(null);
-        document.removeEventListener('click', handleOutsideClick); // Clean up event listener
     };
 
     // Submit form data
@@ -424,10 +400,43 @@ const DialogDemo = () => {
         }
     };
 
+    const handleDialogTriggerClick = () => {
+        // Only open the main dialog, no other side effects
+        setIsDialogOpen(true);
+    };
+
+    const handleOnChangeDialog = (open: boolean) => {
+        if (open) {
+            setIsDialogOpen(true); // Open the main dialog
+        } else {
+            // When trying to close, show the confirmation dialog instead
+            setAlertAction('cancel');
+            setIsAlertDialogOpen(true);
+        }
+    };
+
+    // Handle browser-level events (tab close, reload, navigation)
+    useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            if (isDialogOpen && !isAlertDialogOpen) {
+                // Show custom dialog without triggering browser alert
+                setAlertAction('cancel');
+                setIsAlertDialogOpen(true);
+                event.preventDefault(); // Attempt to delay unload (may not work reliably)
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isDialogOpen, isAlertDialogOpen]);
+
     return (
         <div>
             {/* Main dialog */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={handleOnChangeDialog}>
                 <DialogTrigger asChild>
                     <Button
                         variant='outline'
@@ -522,6 +531,155 @@ const DialogDemo = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+        </div>
+    );
+};
+
+interface UploadedFile {
+    name: string;
+    size: number;
+    file: File;
+}
+
+const ImportButton = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+    const [dragActive, setDragActive] = useState(false);
+
+    // Handle file drop
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === 'dragenter' || e.type === 'dragover') {
+            setDragActive(true);
+        } else if (e.type === 'dragleave') {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFiles(e.dataTransfer.files);
+        }
+    };
+
+    const handleFiles = (files: FileList) => {
+        const newFiles = Array.from(files).map((file) => ({
+            name: file.name,
+            size: file.size,
+            file: file,
+        }));
+        setUploadedFiles((prev) => [...prev, ...newFiles]);
+    };
+
+    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            handleFiles(e.target.files);
+        }
+    };
+
+    const handleDownload = (file: UploadedFile) => {
+        const url = URL.createObjectURL(file.file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleRemove = (fileName: string) => {
+        setUploadedFiles((prev) =>
+            prev.filter((file) => file.name !== fileName)
+        );
+    };
+
+    return (
+        <div>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                    <Button>Import</Button>
+                </DialogTrigger>
+                <DialogContent className='sm:max-w-[425px]'>
+                    <DialogHeader>
+                        <DialogTitle>Import Files</DialogTitle>
+                    </DialogHeader>
+
+                    {/* Drop Zone */}
+                    <div
+                        className={`border-2 border-dashed rounded-md p-6 text-center ${
+                            dragActive
+                                ? 'border-primary bg-primary/10'
+                                : 'border-gray-300'
+                        }`}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                    >
+                        <div className='space-y-2'>
+                            <Upload className='mx-auto h-12 w-12 text-gray-400' />
+                            <p className='text-sm text-gray-600'>
+                                Drag and drop files here or click to upload
+                            </p>
+                            <Button asChild>
+                                <label htmlFor='file-upload'>Upload File</label>
+                            </Button>
+                            <input
+                                id='file-upload'
+                                type='file'
+                                className='hidden'
+                                onChange={handleFileInput}
+                                multiple
+                            />
+                        </div>
+                    </div>
+
+                    {/* Uploaded Files List */}
+                    {uploadedFiles.length > 0 && (
+                        <div className='mt-4 space-y-2'>
+                            {uploadedFiles.map((file) => (
+                                <div
+                                    key={file.name}
+                                    className='flex items-center justify-between p-2 bg-gray-50 rounded-md'
+                                >
+                                    <div className='flex-1 truncate'>
+                                        <span className='text-sm'>
+                                            {file.name}
+                                        </span>
+                                        <span className='text-xs text-gray-500 ml-2'>
+                                            ({(file.size / 1024).toFixed(2)} KB)
+                                        </span>
+                                    </div>
+                                    <div className='flex gap-2'>
+                                        <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            onClick={() => handleDownload(file)}
+                                        >
+                                            <Download className='h-4 w-4' />
+                                        </Button>
+                                        <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            onClick={() =>
+                                                handleRemove(file.name)
+                                            }
+                                        >
+                                            <Trash2 className='h-4 w-4' />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
